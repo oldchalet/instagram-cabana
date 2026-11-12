@@ -1,13 +1,13 @@
 {
-  "nume_cabana": "Cabana A-Frame (scrie aici numele)",
-  "locatie": "satul / zona, județul",
-  "despre_cabana": "cabană tip A-frame pentru max. X persoane, 2 dormitoare, șemineu, ciubăr, terasă cu priveliște, la marginea pădurii",
-  "contact": "Rezervări: 07xx xxx xxx",
-  "link_rezervare": "",
+  "nume_cabana": "OldChalet",
+  "locatie": "Bucium, Iași",
+  "despre_cabana": "cabană tip A-frame pentru până la 6 persoane, cu 2 dormitoare, living cu șemineu, baie și bucătărie, zonă de grătar, terasă și grădină, priveliște frumoasă, parcare privată gratuită, WiFi gratuit, aer condiționat și TV; acceptă animale de companie",
+  "contact": "Rezervări: 0753 931 022",
+  "link_rezervare": "https://www.booking.com/hotel/ro/old-chalet-iasi.ro.html?chal_t=1794471936248&force_referer=https%3A%2F%2Fwww.google.com%2F#availability",
   "ton": "cald, primitor, natural, fără exagerări",
   "limba": "română",
   "numar_hashtaguri": 12,
   "hashtaguri_fixe": ["#aframe", "#cabana", "#romania"],
-  "descriere_implicita": "Un colț de liniște te așteaptă la cabana noastră A-frame 🌲 Rezervări: 07xx xxx xxx",
+  "descriere_implicita": "Old Chalet, locul unde te odihnești cu adevărat 🔥 Rezervări: 0753 931 022. Link în bio.",
   "model_ai": "claude-sonnet-5-5"
 }
