@@ -1,0 +1,57 @@
+name: Postare Instagram
+
+on:
+  schedule:
+    # Ora e în UTC: 16:07 UTC = 18:07 iarna / 19:07 vara (ora României)
+    - cron: "7 16 * * *"
+  workflow_dispatch:
+    inputs:
+      doar_test:
+        description: "Doar test (arată descrierea, NU publică)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency: postare-instagram
+
+jobs:
+  posteaza:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Reîmprospătare token Instagram (expiră la 60 de zile)
+        env:
+          IG_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "GH_PAT lipsește – sar peste reîmprospătare"; exit 0; fi
+          RASP=$(curl -s "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=$IG_TOKEN")
+          NOU=$(echo "$RASP" | jq -r '.access_token // empty')
+          if [ -n "$NOU" ]; then
+            echo "::add-mask::$NOU"
+            gh secret set IG_ACCESS_TOKEN --body "$NOU" --repo "$GITHUB_REPOSITORY"
+            echo "Token reîmprospătat."
+          else
+            echo "Token nereîmprospătat (normal dacă are sub 24 de ore)."
+          fi
+
+      - name: Publicare
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          DOAR_TEST: ${{ inputs.doar_test }}
+        run: |
+          git config user.name "bot-instagram"
+          git config user.email "bot-instagram@users.noreply.github.com"
+          python publica.py
