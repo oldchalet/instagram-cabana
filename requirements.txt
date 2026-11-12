@@ -1,0 +1,4 @@
+requests
+Pillow
+pillow-heif
+google-auth

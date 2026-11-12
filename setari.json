@@ -1,0 +1,13 @@
+{
+  "nume_cabana": "Cabana A-Frame (scrie aici numele)",
+  "locatie": "satul / zona, județul",
+  "despre_cabana": "cabană tip A-frame pentru max. X persoane, 2 dormitoare, șemineu, ciubăr, terasă cu priveliște, la marginea pădurii",
+  "contact": "Rezervări: 07xx xxx xxx",
+  "link_rezervare": "",
+  "ton": "cald, primitor, natural, fără exagerări",
+  "limba": "română",
+  "numar_hashtaguri": 12,
+  "hashtaguri_fixe": ["#aframe", "#cabana", "#romania"],
+  "descriere_implicita": "Un colț de liniște te așteaptă la cabana noastră A-frame 🌲 Rezervări: 07xx xxx xxx",
+  "model_ai": "claude-sonnet-5-5"
+}
