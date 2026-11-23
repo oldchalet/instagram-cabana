@@ -3,7 +3,7 @@ name: Postare Instagram
 on:
   schedule:
     # Ora e în UTC: 16:07 UTC = 18:07 iarna / 19:07 vara (ora României)
-    - cron: "7 16 * * *"
+    - cron: "0 14 * * 1,5"
   workflow_dispatch:
     inputs:
       doar_test:
