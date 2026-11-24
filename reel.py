@@ -119,26 +119,39 @@ def alege_pozele_ai(candidati, mici):
     return candidati[:MAX_POZE]
 
 
-def descriere_reel(note_text: str):
-    """Descriere de vânzare pentru Reel: despre experiență și rezervare, nu despre un detaliu din cadru.
-    Nu primește imaginea, ca să nu descrie acoperișul, hornul sau alte detalii din poză."""
-    despre = p.SETARI.get("despre_cabana", "")
-    contact = p.SETARI.get("contact", "")
-    link = p.SETARI.get("link_rezervare", "").strip()
+UNGHIURI = [
+    "liniște și deconectare de la oraș",
+    "un weekend romantic în doi",
+    "vacanță cu familia și copiii",
+    "escapadă cu prietenii",
+    "weekend de iarnă, cu căldură și șemineu",
+    "relaxare totală, cu saună, terasă și natură",
+    "sejur de lucru sau de recuperare, departe de agitație",
+    "aventură și explorare în zonă",
+]
+
+
+def descriere_reel(note_text: str, texte: list):
+    """Descriere de vânzare, diferită pentru fiecare Reel: se bazează pe detaliile cabanei
+    și pe textele de pe ecran ale acelui clip. Nu primește imaginea, ca să nu descrie detalii din cadru."""
     text = (
         "Scrii descrierea unei postări de Instagram (Reel) pentru o cabană de închiriat. "
         "Scopul este să convingi oamenii să facă o rezervare.\n\n"
-        f"Despre cabană: {p.SETARI.get('nume_cabana')} – {p.SETARI.get('locatie')}. {despre}\n"
-        f"Contact: {contact}\n"
+        f"DETALII DESPRE CABANĂ (folosește doar acestea, nu inventa):\n{p.SETARI.get('despre_cabana', '')}\n"
+        f"Locație: {p.SETARI.get('locatie', '')}\n"
+        f"Contact: {p.SETARI.get('contact', '')}\n\n"
+        f"TEXTELE DE PE ECRANUL ACESTUI CLIP: {' | '.join(texte) if texte else '(niciunul)'}\n"
         f"Notă de la proprietar (dacă există): {note_text or '(niciuna)'}\n\n"
-        "Reguli:\n"
-        "- NU descrie un detaliu anume din clip (nu menționa acoperișul, hornul, o cameră, un obiect). "
-        "Vorbește despre experiența generală: liniște, timp împreună, natură, confort, ce poți face acolo.\n"
-        "- 2–3 propoziții, ton serios, cald și încrezător. Fără exagerări și fără superlative goale.\n"
-        "- Maximum 2 emoji.\n"
-        "- Încheie cu un îndemn clar la rezervare și cu contactul"
-        + (" sau cu „Link în bio”." if not link else ". Scrie „Link în bio”.") + "\n"
-        "- Nu inventa facilități care nu apar în descrierea cabanei.\n\n"
+        "PAȘI:\n"
+        "1. Alege un unghi dintre cele de mai jos, cel care se potrivește cel mai bine cu textele "
+        "de pe ecran. Unghiuri: " + "; ".join(UNGHIURI) + ".\n"
+        "2. Alege 2–3 detalii concrete din descrierea cabanei, potrivite cu unghiul. Nu le enumera pe toate.\n"
+        "3. Scrie 2–3 propoziții, ton serios, cald și încrezător, fără exagerări și fără superlative goale. "
+        "Începe direct cu ideea, nu cu „Un weekend…” sau „Bine ai venit…”.\n"
+        "4. Nu descrie un detaliu vizual din clip (acoperiș, horn, o cameră, un obiect). "
+        "Vorbește despre experiență și despre ce primește oaspetele.\n"
+        "5. Maximum 2 emoji. Încheie cu un îndemn clar la rezervare și cu contactul"
+        + (" sau cu „Link în bio”." if not p.SETARI.get("link_rezervare", "").strip() else ". Scrie „Link în bio”.") + "\n\n"
         'Răspunde DOAR cu JSON: {"text": "descrierea", "hashtaguri": ["12 hashtag-uri relevante, fără #"]}'
     )
     date = json_din_text(ai([{"type": "text", "text": text}], max_tokens=600))
@@ -339,10 +352,10 @@ def main():
     log("Poze alese: " + ", ".join(f["name"] for f in alese))
 
     note = [x for x in (p.nota_pentru(f, fisiere, drive) for f in alese) if x]
-    descriere = descriere_reel(" ".join(note))
+    texte = texte_ecran(cadre[0], " ".join(note))
+    descriere = descriere_reel(" ".join(note), texte)
     log("\n----- DESCRIERE -----\n" + descriere + "\n---------------------\n")
 
-    texte = texte_ecran(cadre[0], descriere)
     imagini_text = []
     if texte:
         marime = marime_comuna(texte)
