@@ -26,7 +26,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install -r requirements.txt && ffmpeg -version | head -1
+      - name: Instalare ffmpeg
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Instalare dependențe Python
+        run: pip install -r requirements.txt
 
       - name: Creare și publicare reel
         env:
