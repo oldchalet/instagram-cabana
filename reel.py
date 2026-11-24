@@ -296,6 +296,36 @@ def construieste_video(cadre, muzica, texte, iesire: Path) -> Path:
     return iesire
 
 
+# ---------------------------------------------------------------- Telegram
+def split_descriere(descriere: str):
+    """Desparte textul de hashtag-uri, ca să le poți copia separat."""
+    parti = descriere.rsplit("\n\n", 1)
+    if len(parti) == 2 and parti[1].lstrip().startswith("#"):
+        return parti[0].strip(), parti[1].strip()
+    return descriere.strip(), ""
+
+
+def telegram_trimite(metoda, date=None, fisiere=None):
+    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    r = requests.post(f"https://api.telegram.org/bot{token}/{metoda}",
+                      data=date or {}, files=fisiere, timeout=300)
+    if r.status_code != 200 or not r.json().get("ok"):
+        raise RuntimeError(f"Eroare Telegram ({r.status_code}): {r.text[:300]}")
+    return r.json()
+
+
+def trimite_pe_telegram(video: Path, descriere: str):
+    chat = os.environ["TELEGRAM_CHAT_ID"].strip()
+    text, hashtaguri = split_descriere(descriere)
+    with video.open("rb") as f:
+        telegram_trimite("sendVideo", {"chat_id": chat, "supports_streaming": "true"},
+                         {"video": (video.name, f, "video/mp4")})
+    telegram_trimite("sendMessage", {"chat_id": chat, "text": text})
+    if hashtaguri:
+        telegram_trimite("sendMessage", {"chat_id": chat, "text": hashtaguri})
+    log("Trimis pe Telegram: clipul, descrierea și hashtag-urile.")
+
+
 # ---------------------------------------------------------------- Instagram
 def publica_reel(url_video, descriere):
     token = os.environ["IG_ACCESS_TOKEN"]
@@ -370,6 +400,17 @@ def main():
 
     if p.DOAR_TEST:
         log("Mod TEST: nu s-a salvat și nu s-a publicat nimic.")
+        return
+
+    if mod == "telegram":
+        trimite_pe_telegram(video, descriere)
+        for f in alese:
+            try:
+                drive.muta(f["id"], id_reels, id_postate)
+            except Exception as e:
+                log(f"! Nu am putut muta {f['name']} în „Postate”: {e}")
+        p.adauga_in_istoric(video.name, ",".join(f["id"] for f in alese), "telegram", descriere)
+        p.commit_si_push(f"Istoric reel: {video.name}")
         return
 
     if mod == "manual":
