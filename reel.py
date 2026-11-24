@@ -6,7 +6,9 @@ La fiecare rulare:
   2. le taie la format vertical 9:16 și face un clip cu tranziții și zoom lent
   3. adaugă o melodie din folderul muzica/ (dacă există)
   4. scrie descrierea și hashtag-urile cu AI
-  5. publică clipul ca Reel și mută pozele în „Postate”
+  5. dacă mod_reel = "auto": publică clipul ca Reel și mută pozele în „Postate”
+     dacă mod_reel = "manual": pune clipul și descrierea în „Gata de postat”,
+     iar tu le postezi din aplicația Instagram
 
 Rulează separat de postarea zilnică (vezi reel.yml). Folosește funcțiile din publica.py.
 """
@@ -27,6 +29,7 @@ ROOT = Path(__file__).resolve().parent
 LUCRU = ROOT / "_lucru_reel"
 MUZICA = ROOT / "muzica"
 FOLDER_REELS = "Reels"
+FOLDER_GATA = "Gata de postat"
 MIN_POZE, MAX_POZE = 3, 4
 SECUNDE_PE_POZA = 3.0
 TRANZITIE = 0.5
@@ -122,6 +125,7 @@ def publica_reel(url_video, descriere):
 
 
 def main():
+    mod = p.SETARI.get("mod_reel", "auto")
     drive = p.Drive()
     principal = os.environ["DRIVE_FOLDER_ID"].strip()
     id_reels = drive.subfolder(principal, FOLDER_REELS)
@@ -144,18 +148,31 @@ def main():
             note.append(nota)
 
     stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
-    video = construieste_video(cadre, alege_muzica(), p.POSTATE / f"{stamp}_reel.mp4")
+    video = construieste_video(cadre, alege_muzica(), LUCRU / f"{stamp}_reel.mp4")
     log(f"Clip creat: {video.name}")
 
     descriere = p.genereaza_descriere(cadre[0], " ".join(note))
     log("\n----- DESCRIERE -----\n" + descriere + "\n---------------------\n")
 
     if p.DOAR_TEST:
-        video.unlink()
-        log("Mod TEST: nu s-a publicat nimic.")
+        log("Mod TEST: nu s-a salvat și nu s-a publicat nimic.")
         return
 
-    # Instagram descarcă clipul de la o adresă publică -> îl urcăm în repository
+    if mod == "manual":
+        id_gata = drive.subfolder(principal, FOLDER_GATA)
+        drive.incarca(id_gata, video.name, video.read_bytes(), "video/mp4")
+        drive.incarca(id_gata, video.stem + "_descriere.txt", descriere.encode("utf-8"), "text/plain")
+        log(f"Salvat în „{FOLDER_GATA}”: {video.name} și descrierea.")
+        for f in alese:
+            drive.muta(f["id"], id_reels, id_postate)
+        p.adauga_in_istoric(video.name, ",".join(f["id"] for f in alese), "manual", descriere)
+        p.commit_si_push(f"Reel pregătit manual: {video.name}")
+        return
+
+    # mod automat: Instagram descarcă clipul de la o adresă publică -> îl urcăm în repository
+    dest = p.POSTATE / video.name
+    dest.write_bytes(video.read_bytes())
+    video = dest
     p.commit_si_push(f"Pregătire reel: {video.name}")
     repo = os.environ["GITHUB_REPOSITORY"]
     ramura = os.environ.get("GITHUB_REF_NAME", "main")
