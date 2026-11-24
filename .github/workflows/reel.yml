@@ -2,12 +2,12 @@ name: Reel Instagram
 
 on:
   schedule:
-    # 14:00 UTC = 16:00 ora de iarna în România; luni și joi
-    - cron: "0 14 * * 1,4"
+    # 14:00 UTC = 16:00 ora de iarna în România; luni și vineri
+    - cron: "0 14 * * 1,5"
   workflow_dispatch:
     inputs:
       doar_test:
-        description: "Doar test (creează clipul și arată descrierea, NU publică)"
+        description: "Doar test (creează clipul și arată descrierea, NU trimite nimic)"
         type: boolean
         default: true
 
@@ -35,12 +35,14 @@ jobs:
       - name: Instalare dependențe Python
         run: pip install -r requirements.txt
 
-      - name: Creare și publicare reel
+      - name: Creare și trimitere reel
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DOAR_TEST: ${{ inputs.doar_test }}
         run: |
           git config user.name "bot-instagram"
