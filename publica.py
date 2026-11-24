@@ -127,6 +127,23 @@ class Drive:
             )
         )
 
+  
+    def incarca(self, folder_id, nume, data: bytes, mime):
+        import json, uuid
+        b = uuid.uuid4().hex
+        meta = json.dumps({"name": nume, "parents": [folder_id]})
+        corp = (
+            f"--{b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{meta}\r\n"
+            f"--{b}\r\nContent-Type: {mime}\r\n\r\n"
+        ).encode("utf-8") + data + f"\r\n--{b}--".encode("utf-8")
+        r = self.s.post(
+            "https://www.googleapis.com/upload/drive/v3/files",
+            params={"uploadType": "multipart", "supportsAllDrives": "true"},
+            headers={"Content-Type": f"multipart/related; boundary={b}"},
+            data=corp,
+        )
+        return self._verifica(r)
+
 
 def deja_postate():
     if not ISTORIC.exists():
