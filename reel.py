@@ -159,14 +159,19 @@ def main():
         return
 
     if mod == "manual":
-        id_gata = drive.subfolder(principal, FOLDER_GATA)
-        drive.incarca(id_gata, video.name, video.read_bytes(), "video/mp4")
-        drive.incarca(id_gata, video.stem + "_descriere.txt", descriere.encode("utf-8"), "text/plain")
-        log(f"Salvat în „{FOLDER_GATA}”: {video.name} și descrierea.")
-        for f in alese:
-            drive.muta(f["id"], id_reels, id_postate)
-        p.adauga_in_istoric(video.name, ",".join(f["id"] for f in alese), "manual", descriere)
+        gata = ROOT / "gata_de_postat"
+        gata.mkdir(exist_ok=True)
+        (gata / video.name).write_bytes(video.read_bytes())
+        (gata / (video.stem + "_descriere.txt")).write_text(descriere, encoding="utf-8")
+        log(f"Salvat în repository, în „gata_de_postat”: {video.name} și descrierea.")
         p.commit_si_push(f"Reel pregătit manual: {video.name}")
+        for f in alese:
+            try:
+                drive.muta(f["id"], id_reels, id_postate)
+            except Exception as e:
+                log(f"! Nu am putut muta {f['name']} în „Postate”: {e}")
+        p.adauga_in_istoric(video.name, ",".join(f["id"] for f in alese), "manual", descriere)
+        p.commit_si_push(f"Istoric reel: {video.name}")
         return
 
     # mod automat: Instagram descarcă clipul de la o adresă publică -> îl urcăm în repository
