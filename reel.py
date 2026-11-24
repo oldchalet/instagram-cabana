@@ -119,6 +119,36 @@ def alege_pozele_ai(candidati, mici):
     return candidati[:MAX_POZE]
 
 
+def descriere_reel(note_text: str):
+    """Descriere de vânzare pentru Reel: despre experiență și rezervare, nu despre un detaliu din cadru.
+    Nu primește imaginea, ca să nu descrie acoperișul, hornul sau alte detalii din poză."""
+    despre = p.SETARI.get("despre_cabana", "")
+    contact = p.SETARI.get("contact", "")
+    link = p.SETARI.get("link_rezervare", "").strip()
+    text = (
+        "Scrii descrierea unei postări de Instagram (Reel) pentru o cabană de închiriat. "
+        "Scopul este să convingi oamenii să facă o rezervare.\n\n"
+        f"Despre cabană: {p.SETARI.get('nume_cabana')} – {p.SETARI.get('locatie')}. {despre}\n"
+        f"Contact: {contact}\n"
+        f"Notă de la proprietar (dacă există): {note_text or '(niciuna)'}\n\n"
+        "Reguli:\n"
+        "- NU descrie un detaliu anume din clip (nu menționa acoperișul, hornul, o cameră, un obiect). "
+        "Vorbește despre experiența generală: liniște, timp împreună, natură, confort, ce poți face acolo.\n"
+        "- 2–3 propoziții, ton serios, cald și încrezător. Fără exagerări și fără superlative goale.\n"
+        "- Maximum 2 emoji.\n"
+        "- Încheie cu un îndemn clar la rezervare și cu contactul"
+        + (" sau cu „Link în bio”." if not link else ". Scrie „Link în bio”.") + "\n"
+        "- Nu inventa facilități care nu apar în descrierea cabanei.\n\n"
+        'Răspunde DOAR cu JSON: {"text": "descrierea", "hashtaguri": ["12 hashtag-uri relevante, fără #"]}'
+    )
+    date = json_din_text(ai([{"type": "text", "text": text}], max_tokens=600))
+    try:
+        return p.construieste_descriere(date["text"], date.get("hashtaguri", []))
+    except (TypeError, KeyError):
+        log("! Descrierea AI nu a putut fi citită, folosesc descrierea implicită.")
+        return p.descriere_implicita()
+
+
 def texte_ecran(cadru0: Path, descriere: str):
     """Trei texte scurte, în tiparul contrast → beneficiu → îndemn. Poate fi lista goală."""
     text = (
@@ -217,7 +247,8 @@ def construieste_video(cadre, muzica, texte, iesire: Path) -> Path:
     filtre = []
     for i in range(n):  # zoom lent pe imagine mărită, fără tremur
         filtre.append(
-            f"[{i}:v]scale={W * FACTOR_ZOOM}:{H * FACTOR_ZOOM},setsar=1,"
+            f"[{i}:v]trim=end_frame=1,setpts=PTS-STARTPTS,"
+            f"scale={W * FACTOR_ZOOM}:{H * FACTOR_ZOOM},setsar=1,"
             f"zoompan=z='min(zoom+{ZOOM_PAS},{ZOOM_MAX})':d={cadri}"
             f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
             f":s={W}x{H}:fps={FPS},format=yuv420p[v{i}]"
@@ -308,7 +339,7 @@ def main():
     log("Poze alese: " + ", ".join(f["name"] for f in alese))
 
     note = [x for x in (p.nota_pentru(f, fisiere, drive) for f in alese) if x]
-    descriere = p.genereaza_descriere(cadre[0], " ".join(note))
+    descriere = descriere_reel(" ".join(note))
     log("\n----- DESCRIERE -----\n" + descriere + "\n---------------------\n")
 
     texte = texte_ecran(cadre[0], descriere)
